@@ -1,0 +1,146 @@
+name: Build & Release
+
+on:
+  push:
+    branches: ["**"]
+    tags:
+      - "v*"
+  pull_request:
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Linux – produces a self-contained AppImage
+  # ─────────────────────────────────────────────────────────────────────────────
+  linux:
+    name: Linux (AppImage)
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt 6
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.7.*"
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          modules: ""
+
+      - name: Install build tools & FUSE (for AppImage)
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y libgl1-mesa-dev libfuse2
+
+      - name: Build
+        run: |
+          qmake Path-Tracker.pro CONFIG+=release
+          make -j$(nproc)
+
+      - name: Bundle with linuxdeployqt
+        run: |
+          # Download linuxdeployqt
+          wget -q -O linuxdeployqt \
+            https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
+          chmod +x linuxdeployqt
+
+          # Create minimal AppDir structure
+          mkdir -p AppDir/usr/bin
+          cp Path-Tracker AppDir/usr/bin/
+
+          # Create a basic .desktop file so linuxdeployqt is happy
+          mkdir -p AppDir/usr/share/applications
+          cat > AppDir/usr/share/applications/path-tracker.desktop <<EOF
+          [Desktop Entry]
+          Name=Path Tracker
+          Exec=Path-Tracker
+          Icon=path-tracker
+          Type=Application
+          Categories=Game;
+          EOF
+
+          # Add a placeholder icon (linuxdeployqt requires one)
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          touch AppDir/usr/share/icons/hicolor/256x256/apps/path-tracker.png
+
+          # Bundle Qt libraries and produce AppImage
+          QMAKE=$(which qmake) ./linuxdeployqt AppDir/usr/share/applications/path-tracker.desktop \
+            -appimage -no-translations -bundle-non-qt-libs
+
+          # Rename for a clean artifact name
+          mv Path_Tracker-x86_64.AppImage Path-Tracker-x86_64.AppImage || \
+          mv *.AppImage Path-Tracker-x86_64.AppImage
+
+      - name: Upload AppImage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Path-Tracker-Linux
+          path: Path-Tracker-x86_64.AppImage
+
+      # Only upload to a GitHub Release when a v* tag is pushed
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Path-Tracker-x86_64.AppImage
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Windows – produces a ZIP with the exe + Qt DLLs via windeployqt
+  # ─────────────────────────────────────────────────────────────────────────────
+  windows:
+    name: Windows (MinGW)
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Qt 6 (MinGW)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.7.*"
+          host: windows
+          target: desktop
+          arch: win64_mingw
+          modules: ""
+          tools: "tools_mingw1310"
+
+      - name: Add Qt-bundled MinGW to PATH
+        shell: pwsh
+        run: |
+          $mingw = "$env:QT_ROOT_DIR\..\..\Tools\mingw1310_64\bin"
+          Add-Content $env:GITHUB_PATH $mingw
+
+      - name: Build
+        shell: cmd
+        run: |
+          qmake Path-Tracker.pro CONFIG+=release
+          mingw32-make -j4
+
+      - name: Deploy Qt DLLs with windeployqt
+        shell: cmd
+        run: |
+          mkdir deploy
+          copy release\Path-Tracker.exe deploy\
+          windeployqt --release deploy\Path-Tracker.exe
+
+      - name: Create ZIP archive
+        shell: pwsh
+        run: |
+          Compress-Archive -Path deploy\* -DestinationPath Path-Tracker-Windows.zip
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Path-Tracker-Windows
+          path: Path-Tracker-Windows.zip
+
+      # Only upload to a GitHub Release when a v* tag is pushed
+      - name: Upload to Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Path-Tracker-Windows.zip

@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Editor</class>
+ <widget class="QDialog" name="Editor">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>889</width>
+    <height>824</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Effect Editor</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_4">
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>1</number>
+     </property>
+     <widget class="QWidget" name="PlayerPage">
+      <attribute name="title">
+       <string>Players</string>
+      </attribute>
+      <layout class="QHBoxLayout" name="horizontalLayout_Player">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_PlayerLeft">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_PlayerHead">
+           <item>
+            <widget class="QLineEdit" name="PlayerLine"/>
+           </item>
+           <item>
+            <widget class="QPushButton" name="PlayerButton">
+             <property name="text">
+              <string>Add Player</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QListWidget" name="PlayerList"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_PlayerRight">
+         <item>
+          <widget class="QScrollArea" name="PlayerDetails">
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="PlayerDetailsBody">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>417</width>
+              <height>756</height>
+             </rect>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_PlayerBody"/>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="EncounterPage">
+      <attribute name="title">
+       <string>Encounters</string>
+      </attribute>
+      <layout class="QHBoxLayout" name="horizontalLayout_Encounter">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_EncounterLeft">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_EncounterHead">
+           <item>
+            <widget class="QLineEdit" name="EncounterLine"/>
+           </item>
+           <item>
+            <widget class="QPushButton" name="EncounterButton">
+             <property name="text">
+              <string>Add Encounter</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QListWidget" name="EncounterList"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_EncounterRight">
+         <item>
+          <widget class="QScrollArea" name="EncounterDetails">
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="EncounterDetailsBody">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>417</width>
+              <height>756</height>
+             </rect>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_EncounterBody"/>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="PawnPage">
+      <attribute name="title">
+       <string>Pawns</string>
+      </attribute>
+      <layout class="QHBoxLayout" name="horizontalLayout_Pawn">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_PawnLeft">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_PawnHead">
+           <item>
+            <widget class="QLineEdit" name="PawnLine"/>
+           </item>
+           <item>
+            <widget class="QPushButton" name="PawnButton">
+             <property name="text">
+              <string>Add Pawn</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QListWidget" name="PawnList"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_PawnRight">
+         <item>
+          <widget class="QScrollArea" name="PawnDetails">
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="PawnDetailsBody">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>417</width>
+              <height>756</height>
+             </rect>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_PawnBody"/>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="Effect">
+      <attribute name="title">
+       <string>Add Effect</string>
+      </attribute>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <widget class="QLineEdit" name="EffectLine"/>
+           </item>
+           <item>
+            <widget class="QPushButton" name="EffectButton">
+             <property name="text">
+              <string>Add Effect</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QListWidget" name="EffectList"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QScrollArea" name="EffectDetails">
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="EffectDetailsBody">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>417</width>
+              <height>756</height>
+             </rect>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_2"/>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="AttributePage">
+      <attribute name="title">
+       <string>Add Attribute</string>
+      </attribute>
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <item>
+        <layout class="QVBoxLayout" name="AttributeFull">
+         <item>
+          <layout class="QHBoxLayout" name="AttributeHead">
+           <item>
+            <widget class="QLineEdit" name="AttributeLine"/>
+           </item>
+           <item>
+            <widget class="QPushButton" name="ComittAttribute">
+             <property name="text">
+              <string>Add Attribute</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QListWidget" name="AttributeList">
+           <property name="isWrapping" stdset="0">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
