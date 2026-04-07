@@ -35,7 +35,6 @@ private:
 
     void ClearLists(QListWidget& list);
     void BuildLists();
-    void AdjustListSize(QListWidget& list);
 
     void CreateActionWidget(Action* action);
     void CreateAttributeWidget(AttributeModifier* modifier);

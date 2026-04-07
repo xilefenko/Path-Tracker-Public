@@ -36,15 +36,6 @@ editor_List::editor_List(PathTrackerStruct* data, EffectTemplate* effect, int in
     ui->setupUi(this);
     InitContextMenus();
     BuildLists();
-
-    if (ui->ActionList->count() == 0)
-        ui->ActionList->setFixedHeight(20);
-
-    if (ui->AddEffectList->count() == 0)
-        ui->AddEffectList->setFixedHeight(20);
-
-    if (ui->AttributeList->count() == 0)
-        ui->AttributeList->setFixedHeight(20);
 }
 
 editor_List::~editor_List()
@@ -270,8 +261,6 @@ void editor_List::CreateActionWidget(Action* action)
     item->setSizeHint(widget->sizeHint());
     ui->ActionList->addItem(item);
     ui->ActionList->setItemWidget(item, widget);
-
-    AdjustListSize(*ui->ActionList);
 }
 
 void editor_List::CreateAttributeWidget(AttributeModifier* modPtr)
@@ -289,8 +278,6 @@ void editor_List::CreateAttributeWidget(AttributeModifier* modPtr)
     item->setSizeHint(widget->sizeHint());
     ui->AttributeList->addItem(item);
     ui->AttributeList->setItemWidget(item, widget);
-
-    AdjustListSize(*ui->AttributeList);
 }
 
 void editor_List::CreateAddEffectWidget(ChildEffectRef* refPtr)
@@ -308,20 +295,6 @@ void editor_List::CreateAddEffectWidget(ChildEffectRef* refPtr)
     item->setSizeHint(widget->sizeHint());
     ui->AddEffectList->addItem(item);
     ui->AddEffectList->setItemWidget(item, widget);
-
-    AdjustListSize(*ui->AddEffectList);
-}
-
-void editor_List::AdjustListSize(QListWidget& list)
-{
-    int totalHeight = 0;
-    for (int i = 0; i < list.count(); ++i)
-        totalHeight += list.sizeHintForRow(i);
-
-    totalHeight += list.frameWidth() * 2;
-    totalHeight += list.spacing() * (list.count() - 1);
-
-    list.setFixedHeight(totalHeight);
 }
 
 // ─────────────────────────────────────────────
