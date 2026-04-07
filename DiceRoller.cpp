@@ -3,6 +3,7 @@
 #include <QRegularExpression>
 #include <QRandomGenerator>
 #include <QDateTime>
+#include <QJsonObject>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -36,6 +37,36 @@ void DiceHistoryModel::clear()
 {
     beginResetModel();
     m_results.clear();
+    endResetModel();
+}
+
+QJsonArray DiceHistoryModel::saveToJson() const
+{
+    QJsonArray arr;
+    for (const DiceResult& r : m_results)
+    {
+        QJsonObject obj;
+        obj["formula"]   = r.formula;
+        obj["result"]    = r.result;
+        obj["timestamp"] = r.timestamp;
+        arr.append(obj);
+    }
+    return arr;
+}
+
+void DiceHistoryModel::loadFromJson(const QJsonArray& arr)
+{
+    beginResetModel();
+    m_results.clear();
+    for (const QJsonValue& v : arr)
+    {
+        const QJsonObject obj = v.toObject();
+        DiceResult r;
+        r.formula   = obj["formula"].toString();
+        r.result    = obj["result"].toInt();
+        r.timestamp = obj["timestamp"].toString();
+        m_results.append(r);
+    }
     endResetModel();
 }
 

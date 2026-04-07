@@ -193,6 +193,11 @@ private:
     QJsonObject buildSaveDocument() const;
     bool        parseSaveDocument(const QJsonObject& root);
 
+    // Registers HP and AC into the AttributeRegistry if not already present.
+    // Called both after loading a save file and when no save file exists,
+    // so these attributes always appear in the editor on a fresh install.
+    void registerBuiltinAttributes();
+
 
 };
 

@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QWidget>
+#include <QTableWidgetItem>
 #include "PathTrackerStruct.h"
 
 namespace Ui {
@@ -19,18 +20,17 @@ public:
     ~pawn_editor();
 
 private slots:
-    // Slot for the commit button
     void onCommitClicked();
+    void onAttributeItemChanged(QTableWidgetItem* item);
 
 private:
     Ui::pawn_editor *ui;
     PathTrackerStruct* DataPtr = nullptr;
     PawnInstance* PawnPtr = nullptr;
+    bool m_refreshing = false;
 
-    // Helper to refresh the list/table
     void refreshAttributeTable();
-
-    // Helper to get Attribute Name from ID (for display purposes)
+    void clampHp();
     QString getAttributeNameFromID(const QString& id);
 };
 

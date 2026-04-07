@@ -576,8 +576,6 @@ void Editor::on_PawnButton_clicked()
         auto newPawn  = std::make_unique<PawnTemplate>();
         newPawn->id   = QUuid::createUuid().toString(QUuid::WithoutBraces);
         newPawn->name = UniqueName(nameText, pawnNames);
-        newPawn->setBaseAttribute(HP_KEY, 10);
-        newPawn->setBaseAttribute(AC_KEY, 10);
         DataPtr->addPawnTemplate(std::move(newPawn));
     }
 

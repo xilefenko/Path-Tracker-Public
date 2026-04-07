@@ -18,6 +18,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QSpinBox>
+#include <QLineEdit>
 #include <QTableView>
 #include <QHeaderView>
 #include <QPushButton>
@@ -204,14 +205,47 @@ void MainWindow::on_DiceHistoryButton_clicked()
     auto* dlg = new QDialog(this);
     dlg->setWindowTitle("Dice Roll History");
     dlg->setAttribute(Qt::WA_DeleteOnClose);
-    dlg->resize(400, 300);
+    dlg->resize(450, 380);
 
-    auto* layout  = new QVBoxLayout(dlg);
-    auto* view    = new QTableView(dlg);
+    auto* layout = new QVBoxLayout(dlg);
+
+    // ── Arbitrary roll section ──────────────────────────────────────
+    auto* rollRow    = new QHBoxLayout;
+    auto* formulaEdit = new QLineEdit(dlg);
+    formulaEdit->setPlaceholderText("e.g. 2D6+3");
+    auto* rollBtn    = new QPushButton("Roll", dlg);
+    auto* resultLabel = new QLabel("—", dlg);
+    QFont rf = resultLabel->font();
+    rf.setBold(true);
+    rf.setPointSize(14);
+    resultLabel->setFont(rf);
+    resultLabel->setMinimumWidth(50);
+    resultLabel->setAlignment(Qt::AlignCenter);
+    rollRow->addWidget(new QLabel("Formula:", dlg));
+    rollRow->addWidget(formulaEdit, 1);
+    rollRow->addWidget(rollBtn);
+    rollRow->addWidget(resultLabel);
+    layout->addLayout(rollRow);
+
+    connect(rollBtn, &QPushButton::clicked, dlg, [formulaEdit, resultLabel](){
+        const QString formula = formulaEdit->text().trimmed();
+        if (formula.isEmpty()) return;
+        const int result = DiceParser::roll(formula);
+        resultLabel->setText(QString::number(result));
+        PathTrackerStruct::instance().save();
+    });
+    // Allow pressing Enter in the formula field to roll
+    connect(formulaEdit, &QLineEdit::returnPressed, rollBtn, &QPushButton::click);
+
+    // ── History table ───────────────────────────────────────────────
+    auto* view = new QTableView(dlg);
     view->setModel(&DiceHistoryModel::instance());
     view->horizontalHeader()->setStretchLastSection(true);
     view->setSelectionBehavior(QAbstractItemView::SelectRows);
     view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    // Auto-scroll to the latest roll
+    connect(&DiceHistoryModel::instance(), &QAbstractTableModel::rowsInserted,
+            view, [view](){ view->scrollToBottom(); });
     layout->addWidget(view);
 
     auto* btnRow   = new QHBoxLayout;
@@ -222,7 +256,11 @@ void MainWindow::on_DiceHistoryButton_clicked()
     btnRow->addWidget(closeBtn);
     layout->addLayout(btnRow);
 
-    connect(clearBtn, &QPushButton::clicked, dlg, [](){ DiceHistoryModel::instance().clear(); });
+    connect(clearBtn, &QPushButton::clicked, dlg, [resultLabel](){
+        DiceHistoryModel::instance().clear();
+        resultLabel->setText("—");
+        PathTrackerStruct::instance().save();
+    });
     connect(closeBtn, &QPushButton::clicked, dlg, &QDialog::accept);
 
     dlg->show();
@@ -478,6 +516,28 @@ void MainWindow::ShowPawnContextMenu(const QPoint &pos)
     if (EncounterOngoing) {
         Menu.addSeparator();
 
+        // Find current initiative for pre-filling the dialog
+        int currentInitiative = 0;
+        for (const InitiativeEntry& entry : enc()->initiativeOrder)
+            if (entry.pawn && entry.pawn->instanceId == PawnID) { currentInitiative = entry.initiative; break; }
+
+        QAction* changeInitAction = Menu.addAction(QIcon::fromTheme("go-jump"), "Change Initiative...");
+        connect(changeInitAction, &QAction::triggered, this, [this, Pawn, currentInitiative]() {
+            bool ok = false;
+            int newInit = QInputDialog::getInt(this, "Change Initiative",
+                                               "New initiative for " + Pawn->displayName + ":",
+                                               currentInitiative, 1, 2147483647, 1, &ok);
+            if (!ok) return;
+            SaveSnapshot();
+            enc()->setInitiative(Pawn->instanceId, newInit);
+            Pawn->savedInitiative = newInit;
+            enc()->sortInitiative();
+            RefreshPawnList();
+            SaveToJson();
+        });
+
+        Menu.addSeparator();
+
         if (Pawn->state == PawnState::Unconscious) {
             QAction* markConsciousAction = Menu.addAction(
                 QIcon::fromTheme("dialog-ok"), "Mark Conscious");
@@ -555,6 +615,61 @@ void MainWindow::ShowPawnContextMenu(const QPoint &pos)
             Pawn->setAttribute(HP_KEY, newHp);
             Pawn->resolveAttributes();
             RefreshPawnList(); FullRefresh(); SaveToJson();
+        });
+    }
+
+    Menu.addSeparator();
+
+    // --- Change Name ---
+    QAction* changeNameAction = Menu.addAction(QIcon::fromTheme("document-edit"), "Change Name...");
+    connect(changeNameAction, &QAction::triggered, this, [this, Pawn]() {
+        bool ok = false;
+        QString newName = QInputDialog::getText(this, "Change Name",
+                                                "New display name:",
+                                                QLineEdit::Normal,
+                                                Pawn->displayName, &ok);
+        if (!ok || newName.trimmed().isEmpty()) return;
+        SaveSnapshot();
+        Pawn->displayName = newName.trimmed();
+        RefreshPawnList();
+        FullRefresh();
+        SaveToJson();
+    });
+
+    // --- Note actions ---
+    if (Pawn->note.isEmpty()) {
+        QAction* addNoteAction = Menu.addAction(QIcon::fromTheme("document-new"), "Add Note...");
+        connect(addNoteAction, &QAction::triggered, this, [this, Pawn]() {
+            bool ok = false;
+            QString text = QInputDialog::getMultiLineText(this, "Add Note",
+                                                          "Note for " + Pawn->displayName + ":",
+                                                          QString(), &ok);
+            if (!ok || text.trimmed().isEmpty()) return;
+            SaveSnapshot();
+            Pawn->note = text.trimmed();
+            FullRefresh();
+            SaveToJson();
+        });
+    } else {
+        QAction* editNoteAction = Menu.addAction(QIcon::fromTheme("document-edit"), "Edit Note...");
+        connect(editNoteAction, &QAction::triggered, this, [this, Pawn]() {
+            bool ok = false;
+            QString text = QInputDialog::getMultiLineText(this, "Edit Note",
+                                                          "Note for " + Pawn->displayName + ":",
+                                                          Pawn->note, &ok);
+            if (!ok) return;
+            SaveSnapshot();
+            Pawn->note = text.trimmed();
+            FullRefresh();
+            SaveToJson();
+        });
+
+        QAction* deleteNoteAction = Menu.addAction(QIcon::fromTheme("edit-delete"), "Delete Note");
+        connect(deleteNoteAction, &QAction::triggered, this, [this, Pawn]() {
+            SaveSnapshot();
+            Pawn->note.clear();
+            FullRefresh();
+            SaveToJson();
         });
     }
 
@@ -711,6 +826,32 @@ void MainWindow::FullRefresh()
                           : QString("%1 (%2)").arg(fxName, mod.description);
             AddPropertyWithValue(attrItem, label, sign);
         }
+    }
+
+    // --- Note (shown as a clickable grey button at the top of the action list) ---
+    if (!Pawn->note.isEmpty()) {
+        auto* noteButton = new QPushButton(Pawn->note, ui->ActionList);
+        noteButton->setFlat(false);
+        noteButton->setStyleSheet("QPushButton { background-color: #555555; color: #dddddd; "
+                                  "text-align: left; padding: 4px 8px; border-radius: 3px; }");
+        noteButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+        connect(noteButton, &QPushButton::clicked, this, [this, Pawn]() {
+            bool ok = false;
+            QString text = QInputDialog::getMultiLineText(this, "Edit Note",
+                                                          "Note for " + Pawn->displayName + ":",
+                                                          Pawn->note, &ok);
+            if (!ok) return;
+            SaveSnapshot();
+            Pawn->note = text.trimmed();
+            FullRefresh();
+            SaveToJson();
+        });
+
+        auto* noteItem = new QListWidgetItem(ui->ActionList);
+        noteItem->setSizeHint(QSize(ui->ActionList->viewport()->width(),
+                                    noteButton->sizeHint().height() + 8));
+        ui->ActionList->setItemWidget(noteItem, noteButton);
     }
 
     // --- Actions ---
@@ -874,11 +1015,18 @@ void MainWindow::on_StartStopButton_clicked()
             std::remove_if(enc()->ownedPawns.begin(), enc()->ownedPawns.end(),
                 [](const std::unique_ptr<PawnInstance>& p){ return p->state == PawnState::Dead; }),
             enc()->ownedPawns.end());
+        // If the selected pawn was removed, clear the selection
+        bool selectedStillExists = false;
+        for (PawnInstance* p : enc()->allCombatants())
+            if (p->instanceId == CurrentPawnID) { selectedStillExists = true; break; }
+        if (!selectedStillExists)
+            CurrentPawnID.clear();
     } else if (result == 3) {
         // Clear all pawns
         enc()->initiativeOrder.clear();
         enc()->ownedPawns.clear();
         enc()->activePlayers.clear();
+        CurrentPawnID.clear();
     }
 
     // Reset remaining pawn states
@@ -892,6 +1040,7 @@ void MainWindow::on_StartStopButton_clicked()
     ui->NextTurnButton->setEnabled(false);
     ui->RoundNumbeLabel->setText("1");
     RefreshPawnList();
+    FullRefresh();
     SaveToJson();
 }
 
@@ -904,9 +1053,14 @@ void MainWindow::on_PawnList_itemDoubleClicked(QListWidgetItem *item)
     }
     if (!pawn) return;
 
+    SaveSnapshot();
     pawn_editor* editor = new pawn_editor(&PathTrackerStruct::instance(), pawn, this);
     editor->setAttribute(Qt::WA_DeleteOnClose);
     editor->setWindowTitle("Editing: " + pawn->displayName);
+    connect(editor, &QDialog::finished, this, [this]() {
+        RefreshPawnList();
+        SaveToJson();
+    });
     editor->show();
 }
 
@@ -1059,7 +1213,7 @@ void MainWindow::on_EncounterAddBtn_clicked()
         QHBoxLayout* row = new QHBoxLayout();
         row->addWidget(new QLabel(pawnTmpl->name));
         QSpinBox* spin = new QSpinBox();
-        spin->setRange(1, 30);
+        spin->setRange(1, 2147483647);
         row->addWidget(spin);
         dlgLayout->addLayout(row);
         pawnRows.append({pawnTmpl, spin});

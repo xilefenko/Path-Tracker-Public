@@ -3,6 +3,7 @@
 #include <QDialog>
 #include <QAbstractTableModel>
 #include <QList>
+#include <QJsonArray>
 
 // ─────────────────────────────────────────────
 //  DiceResult  (flat struct)
@@ -28,6 +29,9 @@ public:
 
     void appendResult(const DiceResult& r);
     void clear();
+
+    QJsonArray  saveToJson()  const;
+    void        loadFromJson(const QJsonArray& arr);
 
     // QAbstractTableModel overrides
     int      rowCount(const QModelIndex& parent = {}) const override;

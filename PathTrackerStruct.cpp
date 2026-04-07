@@ -1,4 +1,5 @@
 #include "PathTrackerStruct.h"
+#include "DiceRoller.h"
 
 #include <QJsonDocument>
 #include <QFile>
@@ -343,6 +344,9 @@ QJsonObject PathTrackerStruct::buildSaveDocument() const
     if (m_activeEncounter)
         runtime["activeEncounter"] = m_activeEncounter->saveToJson();
 
+    // 7. Dice roll history
+    runtime["diceHistory"] = DiceHistoryModel::instance().saveToJson();
+
     root["runtimeLayer"] = runtime;
 
     return root;
@@ -361,6 +365,7 @@ bool PathTrackerStruct::load(const QString& filePath)
     if (!file.open(QIODevice::ReadOnly))
     {
         qWarning() << "PathTrackerStruct::load – file not found or unreadable:" << filePath;
+        registerBuiltinAttributes();
         return false;
     }
 
@@ -453,18 +458,10 @@ bool PathTrackerStruct::parseSaveDocument(const QJsonObject& root)
         m_activeEncounter = std::move(encounter);
     }
 
-    // Ensure mandatory attributes always exist in the registry
-    auto ensureAttr = [](const char* key, const char* displayName, int defaultValue) {
-        if (!AttributeRegistry::instance().hasAttribute(key)) {
-            Attribute attr;
-            attr.key          = key;
-            attr.displayName  = displayName;
-            attr.defaultValue = defaultValue;
-            AttributeRegistry::instance().registerAttribute(attr);
-        }
-    };
-    ensureAttr(HP_KEY, "Hit Points",  10);
-    ensureAttr(AC_KEY, "Armor Class", 10);
+    // 7. Dice roll history
+    DiceHistoryModel::instance().loadFromJson(runtime["diceHistory"].toArray());
+
+    registerBuiltinAttributes();
 
     qDebug() << "PathTrackerStruct::load – done."
              << "Attributes:"        << AttributeRegistry::instance().allAttributes().size()
@@ -589,6 +586,25 @@ bool PathTrackerStruct::loadLegacy(const QString& filePath)
              << "EffectTemplates:" << m_effectTemplates.size();
 
     return true;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Built-in attribute bootstrap
+// ═══════════════════════════════════════════════════════════════════════════════
+
+void PathTrackerStruct::registerBuiltinAttributes()
+{
+    auto ensureAttr = [](const char* key, const char* displayName, int defaultValue) {
+        if (!AttributeRegistry::instance().hasAttribute(key)) {
+            Attribute attr;
+            attr.key          = key;
+            attr.displayName  = displayName;
+            attr.defaultValue = defaultValue;
+            AttributeRegistry::instance().registerAttribute(attr);
+        }
+    };
+    ensureAttr(HP_KEY, "Hit Points",  10);
+    ensureAttr(AC_KEY, "Armor Class", 10);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -57,6 +57,9 @@ public:
     PawnState state           = PawnState::Waiting;
     int       savedInitiative = 0;   // stored on markDead, used on revive
 
+    // DM notes (runtime-only, not derived from template)
+    QString note;
+
     // Flat live attribute table (key -> current value)
     QList<AttributeValue>                     attributes;
 

@@ -117,19 +117,6 @@ PawnInstance* PawnInstance::fromTemplate(const PawnTemplate& pawnTemplate)
     newPawnInstance->displayName = pawnTemplate.name;
     newPawnInstance->attributes  = pawnTemplate.baseAttributes;   // deep copy of flat structs
 
-    // Ensure mandatory HP and AC attributes are present
-    auto ensureAttrValue = [&](const char* key, int defaultValue) {
-        for (const AttributeValue& av : newPawnInstance->attributes)
-            if (av.key == key) return;
-        AttributeValue av;
-        av.key          = key;
-        av.baseValue    = defaultValue;
-        av.currentValue = defaultValue;
-        newPawnInstance->attributes.append(av);
-    };
-    ensureAttrValue(HP_KEY, 10);
-    ensureAttrValue(AC_KEY, 10);
-
     // Default effects are applied by the caller (EncounterInstance) after construction
     // using PathTrackerStruct::findEffectTemplate.
 
@@ -345,6 +332,8 @@ QJsonObject PawnInstance::saveToJson() const
 
     obj["state"]           = StateToString(state);
     obj["savedInitiative"] = savedInitiative;
+    if (!note.isEmpty())
+        obj["note"] = note;
 
     return obj;
 }
@@ -356,6 +345,7 @@ void PawnInstance::loadFromJson(const QJsonObject& obj)
     displayName = obj["displayName"].toString();
     state           = StateFromString(obj["state"].toString("Waiting"));
     savedInitiative = obj["savedInitiative"].toInt(0);
+    note            = obj["note"].toString();
 
     attributes.clear();
     for (const QJsonValue& jsonValue : obj["attributes"].toArray())
@@ -386,17 +376,6 @@ Player* Player::create(const QString& name)
     newPlayer->templateId  = {};   // Players have no template
     newPlayer->displayName = name;
     newPlayer->playerName  = name;
-
-    // Ensure mandatory HP and AC attributes
-    auto ensureAttrValue = [&](const char* key, int defaultValue) {
-        AttributeValue av;
-        av.key          = key;
-        av.baseValue    = defaultValue;
-        av.currentValue = defaultValue;
-        newPlayer->attributes.append(av);
-    };
-    ensureAttrValue(HP_KEY, 10);
-    ensureAttrValue(AC_KEY, 10);
 
     return newPlayer;
 }
